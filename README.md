@@ -1,17 +1,17 @@
-# Image Classifier with ViT and DETR
+# 📸 Image Classifier for Photographers 📸
 
-This repository provides a graphical application to classify images using the `Vision Transformer (ViT)` model and object detection using the `DEtection TRansformer (DETR)` model. The user can select a folder containing images to be processed, and the application will then display these images with associated class predictions and detected objects.
+This repository is designed for photographers 📷! It provides a graphical application to classify and detect objects in images. Use the power of the `Vision Transformer (ViT)` for classification and the `DEtection TRansformer (DETR)` for object detection. Easily select a folder with your images and let the application highlight the magic within them.
 
-## Features:
+## ✨ Features:
 
-- Multi-threaded image processing.
-- Progress bar and process status updates.
-- Option to trust AI and apply all suggestions.
-- Thumbnails of images on the canvas.
-- Ability to stop the ongoing processing.
-- Dark mode.
+- 🚀 Multi-threaded image processing.
+- 🔄 Progress bar and process status updates.
+- 🤖 Option to trust AI and apply all suggestions.
+- 🖼 Thumbnails of images on the canvas.
+- 🛑 Ability to stop the ongoing processing.
+- 🌙 Dark mode.
 
-## Setup
+## 🛠 Setup
 
 ### Dependencies:
 
@@ -37,7 +37,7 @@ cd <repository_directory>
 pip install transformers torch pillow iptcinfo3
 ```
 
-## Usage:
+## 🚀 Usage:
 
 Run the main script:
 
@@ -47,15 +47,15 @@ python app.py
 
 Once the GUI launches:
 
-1. Click on "Process Folder" to select a directory with images.
-2. Choose desired options.
-3. The application will display each image with its classification and detected objects.
-4. You can click on each image to view it in full size.
+1. 📂 Click on "Process Folder" to select a directory with images.
+2. ⚙️ Choose desired options.
+3. 👁‍🗨 The application will display each image with its classification and detected objects.
+4. 🔍 You can click on each image to view it in full size.
 
-## Contribution:
+## 🤝 Contribution:
 
 Pull requests are welcome. For significant changes, please open an issue first to discuss what you'd like to change.
 
-## License:
+## 📜 License:
 
 [MIT](https://choosealicense.com/licenses/mit/)
