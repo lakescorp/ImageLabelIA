@@ -42,10 +42,8 @@ pip install transformers torch pillow iptcinfo3
 Run the main script:
 
 ```
-python main_script_name.py
+python app.py
 ```
-
-(Note: You need to replace `main_script_name.py` with the appropriate filename.)
 
 Once the GUI launches:
 
