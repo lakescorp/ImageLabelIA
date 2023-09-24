@@ -1,4 +1,5 @@
 from PIL import Image, ExifTags
+from iptcinfo3 import IPTCInfo
 
 class ImageUtils:
 
@@ -50,3 +51,17 @@ class ImageUtils:
         
         img = img.resize((new_width, new_height))
         return img
+
+    @staticmethod
+    def get_iptc_keywords(image_path):
+        """Extract keywords from the IPTC metadata of an image."""
+        # Create an IPTCInfo object
+        info = IPTCInfo(image_path)
+
+        # Check for errors
+        if info.error:
+            print(f"ERROR: {info.error}")
+            return []        
+
+        # Return the list of keywords, if they exist
+        return info['keywords']

@@ -134,7 +134,7 @@ class ImageClassifierApp:
         self.canvas.grid(row=1, column=1, columnspan=3, sticky="nsew", padx=20, pady=20) 
 
         self.scrollbar = tk.Scrollbar(self.root, orient="vertical", command=self.canvas.yview)
-        self.scrollbar.grid(row=1, column=5, sticky="ns")
+        self.scrollbar.grid(row=1, column=4, sticky="ns")
 
         self.canvas.config(yscrollcommand=self.scrollbar.set, scrollregion=self.canvas.bbox("all"))
         self.canvas_frame = tk.Frame(self.canvas, bg=DARK_COLOR)
@@ -146,11 +146,21 @@ class ImageClassifierApp:
     def setup_preview_frame(self):
         """Set up the frame for image previews on the right side."""
         self.preview_frame = tk.Frame(self.root, bg=DARK_COLOR)
-        self.preview_frame.grid(row=1, column=2, sticky="nswe", padx=10, pady=10)
-        self.root.grid_columnconfigure(2, weight=1)  # Para que el marco de vista previa se expanda horizontalmente
+        self.preview_frame.grid(row=1, column=5, sticky="nswe", padx=10, pady=10)
         # Inicializa con una etiqueta vacía para la vista previa de la imagen
         self.preview_image_label = tk.Label(self.preview_frame, bg=DARK_COLOR)
         self.preview_image_label.pack(pady=20)
+        
+        # Añadir etiquetas para mostrar la información
+        self.file_name_label = tk.Label(self.preview_frame, bg=DARK_COLOR, fg=TEXT_COLOR)
+        self.file_name_label.pack(pady=5, anchor="w")
+
+        self.file_path_label = tk.Label(self.preview_frame, bg=DARK_COLOR, fg=TEXT_COLOR)
+        self.file_path_label.pack(pady=5, anchor="w")
+
+        self.keywords_label = tk.Label(self.preview_frame, bg=DARK_COLOR, fg=TEXT_COLOR)
+        self.keywords_label.pack(pady=5, anchor="w")
+
 
     def _on_mousewheel(self, event):
         """Scroll the canvas with the mouse wheel."""
@@ -278,7 +288,7 @@ class ImageClassifierApp:
         img_label = tk.Label(main_frame, image=thumbnail_tk, bg=frame_bg)
         img_label.image = thumbnail_tk
         img_label.pack(side="left", padx=10)
-        img_label.bind("<Button-1>", lambda event: self.open_image(image_path))
+        img_label.bind("<Button-1>", lambda event: self.on_list_item_click(image_path))
 
         right_frame = tk.Frame(main_frame, bd=0, relief="flat", bg=frame_bg) 
         right_frame.pack(side="right", fill="both", expand=True)
@@ -422,31 +432,39 @@ class ImageClassifierApp:
         img_label = tk.Label(main_frame, image=thumbnail, bg=frame_bg)
         img_label.image = thumbnail
         img_label.pack(side="left", padx=10)
-        img_label.bind("<Button-1>", lambda event: self.open_image(image_path))
+        img_label.bind("<Button-1>", lambda event: self.on_list_item_click(image_path)) # self.open_image(image_path)
 
         right_frame = tk.Frame(main_frame, bd=0, relief="flat", bg=frame_bg) 
         right_frame.pack(side="right", fill="both", expand=True)
 
         tk.Label(right_frame, text=os.path.basename(image_path), bg=frame_bg, fg=TEXT_COLOR).pack(anchor="w")
 
-        main_frame.bind("<Button-1>", self.on_list_item_click(image_path, os.path.basename(image_path)))
+        # main_frame.bind("<Button-1>", lambda event: self.on_list_item_click(image_path, os.path.basename(image_path)))
 
-    def on_list_item_click(self, image_path, image_name):
+    def on_list_item_click(self, image_path):
         """Handles a click on an item in the list."""
-        def _callback(event):
-            # Abrir la imagen con el programa predeterminado
-            self.open_image(image_path)
-            # Mostrar la vista previa a la derecha
-            self.show_preview(image_path)
-        return _callback
+        print(f"Clicked on {image_path}")
+        # Mostrar la vista previa a la derecha
+        self.show_preview(image_path)
+
     
     def show_preview(self, image_path):
         """Show an enlarged preview of the image in the right frame."""
-        larger_thumbnail_img = ImageUtils.generate_thumbnail(image_path, base_size=(400, 400))
+        larger_thumbnail_img = ImageUtils.generate_thumbnail(image_path, base_size=400)
         larger_thumbnail = ImageTk.PhotoImage(larger_thumbnail_img)
         
         self.preview_image_label.configure(image=larger_thumbnail)
         self.preview_image_label.image = larger_thumbnail 
+        self.preview_image_label.bind("<Button-1>", lambda event: self.open_image(image_path))
+
+        # Actualizar las etiquetas con la información adecuada
+        self.file_name_label.config(text=os.path.basename(image_path))
+        self.file_path_label.config(text=image_path)
+
+        keywords = ImageUtils.get_iptc_keywords(image_path)
+        formatted_keywords = ", ".join([keyword.decode('utf-8') for keyword in keywords]) if keywords else "N/A"
+        self.keywords_label.config(text=f"Keywords: {formatted_keywords}")
+
 
     def load_top_folders(self):
         """Load the root folders, such as drives on Windows."""
