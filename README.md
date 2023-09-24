@@ -27,8 +27,8 @@ This repository is designed for photographers 📷! It provides a graphical appl
 1. Clone the repository:
 
 ```
-git clone <repository_url>
-cd <repository_directory>
+git clone https://github.com/lakescorp/ImageLabelIA.git
+cd ImageLabelIA
 ```
 
 2. Install the required packages:
