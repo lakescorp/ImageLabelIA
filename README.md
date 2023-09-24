@@ -2,6 +2,14 @@
 
 This repository is designed for photographers 📷! It provides a graphical application to classify and detect objects in images. Use the power of the `Vision Transformer (ViT)` for classification and the `DEtection TRansformer (DETR)` for object detection. Easily select a folder with your images and let the application highlight the magic within them.
 
+## 📷 Application Screenshots:
+
+![Home Capture](images/captura-home1.png)
+
+![Process Capture](images/captura-proceso.png)
+
+![Tags applied capture](images/captura-aplicacion.png)
+
 ## ✨ Features:
 
 - 🚀 Multi-threaded image processing.
