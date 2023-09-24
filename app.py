@@ -1,15 +1,18 @@
 # Required imports
 import os
 import threading
+import time
 import tkinter as tk
-from tkinter import filedialog, ttk
-from PIL import Image, ImageTk, ExifTags
+from tkinter import ttk
+from PIL import ImageTk
+import queue
 
 # Custom module imports
 from vit_image_classifier import ViTImageClassifier
 from detr_object_detector import DetrObjectDetector
 from ImageWriter import ImageWriter
 from translator import Translator
+from image_utils import ImageUtils
 
 # Define some UI color constants
 DARK_COLOR = "#333"
@@ -28,26 +31,31 @@ class Prediction:
 class ImageClassifierApp:
     
     def __init__(self, root):
-        self.root = root
+        self.root = root      
         self.translator = Translator()  # Initialize the translator
         # Set up the app
         self.setup_root()
         self.setup_styles()
         self.setup_widgets()
+        self.setup_treeview() 
+        self.setup_preview_frame()
         # Initialize machine learning models and utility
         self.vit_classifier = ViTImageClassifier()
         self.detr_detector = DetrObjectDetector()
         self.image_writer = ImageWriter()
         self.stop_requested = False  # Control variable for stopping a long process
+        self.last_selected_folder = None
+        self.all_thumbnails = []
 
 
     def setup_root(self):
         """Configure the main window properties."""
         self.root.title("Image Classifier")
         self.root.configure(bg=DARK_COLOR)
-        self.root.grid_rowconfigure(1, weight=1)
+        self.root.grid_rowconfigure(1, weight=2)
         self.root.grid_columnconfigure(3, weight=0)
-        self.root.grid_columnconfigure(0, weight=1)
+        self.root.grid_columnconfigure(0, weight=0, minsize=200)  # Asegura un tamaño mínimo para la columna que contiene el treeview
+        self.root.grid_columnconfigure(1, weight=1) 
 
     def setup_styles(self):
         """Define styles for the ttk widgets."""
@@ -59,6 +67,33 @@ class ImageClassifierApp:
         style.configure("TFrame", background=DARK_COLOR)
         style.configure("TProgressbar", troughcolor=DARK_COLOR, background=LIGHT_DARK_COLOR)
         style.configure("TScrollbar", background=DARK_COLOR)
+
+        # Dark theme for Treeview
+        style.configure("Treeview", 
+                        background=DARK_COLOR, 
+                        foreground=TEXT_COLOR, 
+                        fieldbackground=DARK_COLOR,
+                        insertbackground=TEXT_COLOR)
+        
+        style.map("Treeview", 
+                background=[('selected', LIGHT_DARK_COLOR)])
+        
+        style.configure("Treeview.Heading", 
+                        background=LIGHT_DARK_COLOR, 
+                        foreground=TEXT_COLOR, 
+                        relief="flat")
+
+        style.map("Treeview.Heading", 
+                background=[('active', EVEN_DARKER_COLOR)])
+        
+        style.configure("Vertical.TScrollbar", 
+                gripcount=0,
+                background=LIGHT_DARK_COLOR,
+                troughcolor=DARK_COLOR,
+                arrowcolor=TEXT_COLOR)
+
+        style.map("Vertical.TScrollbar", 
+                background=[('pressed', EVEN_DARKER_COLOR), ('active', LIGHT_DARK_COLOR)])
 
     def setup_widgets(self):
         """Set up the main interface widgets."""
@@ -96,7 +131,7 @@ class ImageClassifierApp:
     def setup_canvas(self):
         """Set up the canvas and associated scrollbar."""
         self.canvas = tk.Canvas(self.root, bg=DARK_COLOR, highlightbackground=DARK_COLOR)
-        self.canvas.grid(row=1, column=0, columnspan=3, sticky="nsew", padx=20, pady=20) 
+        self.canvas.grid(row=1, column=1, columnspan=3, sticky="nsew", padx=20, pady=20) 
 
         self.scrollbar = tk.Scrollbar(self.root, orient="vertical", command=self.canvas.yview)
         self.scrollbar.grid(row=1, column=5, sticky="ns")
@@ -107,6 +142,15 @@ class ImageClassifierApp:
         self.canvas_frame.bind("<Configure>", self.on_canvas_configure)
 
         self.root.bind("<MouseWheel>", self._on_mousewheel) 
+
+    def setup_preview_frame(self):
+        """Set up the frame for image previews on the right side."""
+        self.preview_frame = tk.Frame(self.root, bg=DARK_COLOR)
+        self.preview_frame.grid(row=1, column=2, sticky="nswe", padx=10, pady=10)
+        self.root.grid_columnconfigure(2, weight=1)  # Para que el marco de vista previa se expanda horizontalmente
+        # Inicializa con una etiqueta vacía para la vista previa de la imagen
+        self.preview_image_label = tk.Label(self.preview_frame, bg=DARK_COLOR)
+        self.preview_image_label.pack(pady=20)
 
     def _on_mousewheel(self, event):
         """Scroll the canvas with the mouse wheel."""
@@ -141,21 +185,44 @@ class ImageClassifierApp:
 
 
     def process_folder(self):
-        """Choose a folder and process its image files."""
-        folder_path = filedialog.askdirectory()
-        if not folder_path:
+        """Process all the images in the currently expanded folder in the treeview."""
+        
+        # Identify the current selected item in the treeview
+        item_id = self.folder_tree.focus()
+        
+        if not item_id:
+            return  # Return if no folder is selected
+
+        # Get the folder path from the selected item
+        folder_path = self.folder_tree.item(item_id, 'values')[0]
+        
+        # Check if it's a directory, if not, it might be an image so we get its parent directory
+        if not os.path.isdir(folder_path):
+            folder_path = os.path.dirname(folder_path)
+        
+        # List all the image files in that directory
+        image_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+
+        # Check if there are any image files to process
+        if not image_files:
+            self.show_toast(self.translator.translate("No hay imágenes en la carpeta seleccionada."))
             return
         
+        # Clear the canvas to prepare for the results
         self.clear_canvas()
 
+        # Make the "Stop" button visible and disable the "Process Folder" button
         self.button_open.config(state='disabled')
-        self.button_stop.grid(row=0, column=5, pady=10, sticky="w")  
-        image_files = [f for f in os.listdir(folder_path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
-        
+        self.button_stop.grid(row=0, column=5, pady=10, sticky="w")
+
+        # Set up the progress bar
         self.progress_bar.grid(row=0, column=3, pady=10)
         self.progress_label.grid(row=0, column=4, pady=10, padx=5)
 
+        # Start the thread to process the images
         threading.Thread(target=self._process_images_in_folder, args=(folder_path, image_files)).start()
+
+
 
     def _process_images_in_folder(self, folder_path, image_files):
         """Classify and detect objects in images within a folder."""
@@ -186,7 +253,8 @@ class ImageClassifierApp:
         self.progress_var.set(idx + 1)
         self.progress_label["text"] = f"{idx + 1}/{total_images}"
         
-        thumbnail = self.generate_thumbnail(image_path)
+        thumbnail = ImageUtils.generate_thumbnail(image_path)
+        self.all_thumbnails.append(thumbnail)
         self.display_on_canvas(thumbnail, image_file, image_path, combined_results)
 
     def finish_processing(self):
@@ -197,40 +265,6 @@ class ImageClassifierApp:
         self.button_stop.grid_forget()
 
         self.show_toast(self.translator.translate("¡Todas las imágenes han sido analizadas!"), bg_color=SUCCESS_COLOR)
-
-    def generate_thumbnail(self, image_path):
-        """Generate a thumbnail for the given image."""
-        img = Image.open(image_path)
-        exif = img._getexif()
-        img = img.convert("RGB")
-                
-        # Attempt to get the orientation tag from the image's EXIF data
-        try:
-            for orientation in ExifTags.TAGS.keys():
-                if ExifTags.TAGS[orientation] == 'Orientation':
-                    break
-            if exif is not None and orientation in exif:
-                if exif[orientation] == 2:
-                    img = img.transpose(Image.FLIP_LEFT_RIGHT)
-                elif exif[orientation] == 3:
-                    img = img.rotate(180)
-                elif exif[orientation] == 4:
-                    img = img.rotate(180).transpose(Image.FLIP_LEFT_RIGHT)
-                elif exif[orientation] == 5:
-                    img = img.rotate(-90, expand=True).transpose(Image.FLIP_LEFT_RIGHT)
-                elif exif[orientation] == 6:
-                    img = img.rotate(-90, expand=True)
-                elif exif[orientation] == 7:
-                    img = img.rotate(90, expand=True).transpose(Image.FLIP_LEFT_RIGHT)
-                elif exif[orientation] == 8:
-                    img = img.rotate(90, expand=True)
-        except (AttributeError, KeyError, IndexError):
-            # Cases where the image doesn't have EXIF data
-            print(f"No hay exif para {image_path}")
-            pass
-        
-        img = img.resize((75, 75))
-        return ImageTk.PhotoImage(img)
         
     def display_on_canvas(self, thumbnail, image_file, image_path, tags):
         """Display the thumbnail and associated tags on the canvas."""
@@ -239,8 +273,10 @@ class ImageClassifierApp:
         main_frame = tk.Frame(self.canvas_frame, bd=0, relief="flat", bg=frame_bg)  
         main_frame.pack(fill="x", expand=True, padx=0, pady=0)
 
-        img_label = tk.Label(main_frame, image=thumbnail, bg=frame_bg)
-        img_label.image = thumbnail
+        thumbnail_tk = ImageTk.PhotoImage(thumbnail)
+
+        img_label = tk.Label(main_frame, image=thumbnail_tk, bg=frame_bg)
+        img_label.image = thumbnail_tk
         img_label.pack(side="left", padx=10)
         img_label.bind("<Button-1>", lambda event: self.open_image(image_path))
 
@@ -300,6 +336,147 @@ class ImageClassifierApp:
     def open_image(self, path):
         """Open image with default viewer."""
         os.startfile(path)
+
+    def setup_treeview(self):
+        """Set up the folder treeview and its functionalities."""
+        self.folder_frame = tk.Frame(self.root)
+        self.folder_frame.grid(row=1, column=0, sticky="nswe", padx=0, pady=10)
+        self.folder_tree = ttk.Treeview(self.folder_frame, selectmode="browse")
+        self.folder_tree.pack(fill="both", expand=True, side="left")
+
+        # Adding vertical scrollbar
+        self.folder_scroll = ttk.Scrollbar(self.folder_frame, orient="vertical", command=self.folder_tree.yview)
+        self.folder_scroll.pack(side="right", fill="y")
+        self.folder_tree.configure(yscrollcommand=self.folder_scroll.set)
+
+        self.folder_tree.bind("<<TreeviewSelect>>", self.on_folder_select)
+        self.folder_tree.bind("<MouseWheel>", self.on_treeview_scroll)
+
+        self.load_top_folders()
+
+    def on_treeview_scroll(self, event):
+        """Handle the scroll event on the treeview and stop its propagation."""
+        self.folder_tree.yview_scroll(-1*(event.delta//120), "units")
+        return "break"
+
+    def on_folder_select(self, event):
+        item_id = self.folder_tree.focus()
+        folder_path = self.folder_tree.item(item_id, 'values')[0]
+
+        if self.last_selected_folder == folder_path:
+            return
+        
+        self.last_selected_folder = folder_path
+
+        # Handle subfolders
+        if self.folder_tree.get_children(item_id) in ((), None) or len(self.folder_tree.get_children(item_id)) == 1:
+            self.folder_tree.delete(*self.folder_tree.get_children(item_id))
+            try:
+                for subfolder in os.listdir(folder_path):
+                    full_path = os.path.join(folder_path, subfolder)
+                    if os.path.isdir(full_path):
+                        self.add_folder(subfolder, item_id)
+            except (PermissionError, FileNotFoundError) as e:
+                print(f"Error al acceder a {folder_path}: {e}")
+
+        # Clear the canvas for images
+        self.clear_canvas()
+
+        # Collect image paths and move the image processing to a separate thread
+        image_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+
+        # Use a queue to pass image paths between threads
+        self.image_queue = queue.Queue()
+        for image_path in image_files:
+            self.image_queue.put(image_path)
+
+        # Start the thread to process and display images
+        threading.Thread(target=self.process_images_from_queue).start()
+
+
+
+    def process_images_from_queue(self):
+        self.clear_canvas()  # Clear the canvas before displaying the images
+        if self.image_queue.empty():  # Check if the queue is empty
+            return  # If the queue is empty, simply return without showing the toast
+        while not self.image_queue.empty():
+            image_path = self.image_queue.get()
+            self.root.after_idle(self.display_image_on_canvas, image_path)
+            time.sleep(0.05)  # Small delay to allow the UI to refresh
+        # Show a toast when all files are listed
+        self.show_toast("¡Todas las imágenes han sido listadas!")
+
+
+
+
+    def display_image_on_canvas(self, image_path):
+        """Display an image thumbnail on the canvas."""
+        thumbnail_img = ImageUtils.generate_thumbnail(image_path)
+        thumbnail = ImageTk.PhotoImage(thumbnail_img)
+        
+        frame_bg = DARK_COLOR if len(self.canvas_frame.winfo_children()) % 2 == 0 else EVEN_DARKER_COLOR
+
+        main_frame = tk.Frame(self.canvas_frame, bd=0, relief="flat", bg=frame_bg)  
+        main_frame.pack(fill="x", expand=True, padx=0, pady=0)
+
+        img_label = tk.Label(main_frame, image=thumbnail, bg=frame_bg)
+        img_label.image = thumbnail
+        img_label.pack(side="left", padx=10)
+        img_label.bind("<Button-1>", lambda event: self.open_image(image_path))
+
+        right_frame = tk.Frame(main_frame, bd=0, relief="flat", bg=frame_bg) 
+        right_frame.pack(side="right", fill="both", expand=True)
+
+        tk.Label(right_frame, text=os.path.basename(image_path), bg=frame_bg, fg=TEXT_COLOR).pack(anchor="w")
+
+        main_frame.bind("<Button-1>", self.on_list_item_click(image_path, os.path.basename(image_path)))
+
+    def on_list_item_click(self, image_path, image_name):
+        """Handles a click on an item in the list."""
+        def _callback(event):
+            # Abrir la imagen con el programa predeterminado
+            self.open_image(image_path)
+            # Mostrar la vista previa a la derecha
+            self.show_preview(image_path)
+        return _callback
+    
+    def show_preview(self, image_path):
+        """Show an enlarged preview of the image in the right frame."""
+        larger_thumbnail_img = ImageUtils.generate_thumbnail(image_path, base_size=(400, 400))
+        larger_thumbnail = ImageTk.PhotoImage(larger_thumbnail_img)
+        
+        self.preview_image_label.configure(image=larger_thumbnail)
+        self.preview_image_label.image = larger_thumbnail 
+
+    def load_top_folders(self):
+        """Load the root folders, such as drives on Windows."""
+        for drive in [d for d in [drive + ":\\" for drive in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'] if os.path.exists(d)]:
+            self.add_folder(drive, "")
+
+    def add_folder(self, folder, parent):
+        """Add a folder to the treeview."""
+        folder_path = folder if parent == "" else os.path.join(self.folder_tree.item(parent, 'values')[0], folder)
+        try:
+            folder_id = self.folder_tree.insert(parent, "end", text=folder, values=[folder_path])
+            if os.path.isdir(folder_path):
+                # Add a dummy child to make this folder expandable
+                self.folder_tree.insert(folder_id, "end")
+        except PermissionError:
+            pass
+
+
+    def on_folder_expand(self, event):
+        item_id = self.folder_tree.focus()
+        folder_path = self.folder_tree.item(item_id, 'values')[0]
+        self.folder_tree.delete(*self.folder_tree.get_children(item_id))
+        
+        try:
+            for subfolder in os.listdir(folder_path):
+                full_path = os.path.join(folder_path, subfolder)
+                if os.path.isdir(full_path):
+                    self.add_folder(subfolder, item_id)
+        except PermissionError:
+            pass
 
 
 if __name__ == "__main__":

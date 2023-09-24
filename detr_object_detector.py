@@ -53,6 +53,7 @@ class DetrObjectDetector:
         # Open the image using PIL and correct its orientation if needed
         image = Image.open(image_path)
         image = self._correct_image_orientation(image)
+        image = image.convert("RGB")
 
         # Process the image and convert to tensors
         inputs = self.processor(images=image, return_tensors="pt").to(self.device)
