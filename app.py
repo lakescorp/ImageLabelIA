@@ -50,7 +50,7 @@ class ImageClassifierApp:
 
     def setup_root(self):
         """Configure the main window properties."""
-        self.root.title("Image Classifier")
+        self.root.title("ImageLabelIA")
         self.root.configure(bg=DARK_COLOR)
         self.root.grid_rowconfigure(1, weight=2)
         self.root.grid_columnconfigure(3, weight=0)
@@ -463,7 +463,7 @@ class ImageClassifierApp:
 
         keywords = ImageUtils.get_iptc_keywords(image_path)
         formatted_keywords = ", ".join([keyword.decode('utf-8') for keyword in keywords]) if keywords else "N/A"
-        self.keywords_label.config(text=f"Keywords: {formatted_keywords}")
+        self.keywords_label.config(text=f"Keywords: {formatted_keywords}", wraplength=380)
 
 
     def load_top_folders(self):

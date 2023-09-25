@@ -67,11 +67,11 @@ class ViTImageClassifier:
         # Convert logits to probabilities
         probabilities = F.softmax(logits, dim=1)
 
-        # Extract classes with high prediction probability (e.g., >= 0.9)
-        predicted_classes = []
-        for idx, probability in enumerate(probabilities):
-            if probability[0] >= 0.9:
-                predicted_classes.append(self.model.config.id2label[idx])
+        # Get the predicted class index
+        predicted_class_idx = torch.argmax(probabilities, dim=1).item()
 
-        # Return the list of predicted classes
-        return predicted_classes
+        # Return the label of the predicted class
+        classes_detected = []
+        if self.model.config.id2label[predicted_class_idx]:
+            classes_detected= self.model.config.id2label[predicted_class_idx].split(", ")
+        return classes_detected
