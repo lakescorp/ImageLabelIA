@@ -147,11 +147,11 @@ class ImageClassifierApp:
         """Set up the frame for image previews on the right side."""
         self.preview_frame = tk.Frame(self.root, bg=DARK_COLOR)
         self.preview_frame.grid(row=1, column=5, sticky="nswe", padx=10, pady=10)
-        # Inicializa con una etiqueta vacía para la vista previa de la imagen
+        # Initialize with an empty label for image preview
         self.preview_image_label = tk.Label(self.preview_frame, bg=DARK_COLOR)
         self.preview_image_label.pack(pady=20)
         
-        # Añadir etiquetas para mostrar la información
+        # Add labels to display information
         self.file_name_label = tk.Label(self.preview_frame, bg=DARK_COLOR, fg=TEXT_COLOR)
         self.file_name_label.pack(pady=5, anchor="w")
 
@@ -160,6 +160,54 @@ class ImageClassifierApp:
 
         self.keywords_label = tk.Label(self.preview_frame, bg=DARK_COLOR, fg=TEXT_COLOR)
         self.keywords_label.pack(pady=5, anchor="w")
+        self.setup_keywords_controls()
+
+    def setup_keywords_controls(self):
+        """Configura los controles para añadir y seleccionar keywords en el frame de previsualización."""
+
+        self.keywords_title_label = tk.Label(self.preview_frame, text="Keywords", bg=DARK_COLOR, fg=TEXT_COLOR)
+        self.keywords_title_label.pack(pady=5, anchor="w")
+        
+        self.keyword_entry = tk.Entry(self.preview_frame, bg=DARK_COLOR, fg=TEXT_COLOR)
+        self.keyword_entry.pack(pady=5)
+        
+        self.add_keyword_button = tk.Button(self.preview_frame, text="Añadir", command=self.add_custom_keyword)
+        self.add_keyword_button.pack(pady=5)
+        
+        self.apply_dark_theme_to_widget(self.add_keyword_button)
+        
+        self.keywords_checkbuttons_frame = tk.Frame(self.preview_frame, bg=DARK_COLOR)
+        self.keywords_checkbuttons_frame.pack(pady=5)
+        
+        self.apply_keywords_button = tk.Button(self.preview_frame, text="Aplicar", command=lambda: self.apply_tags(os.path.basename(self.file_path_label.cget("text")), self.file_path_label.cget("text"), self.keywords_vars))
+        self.apply_keywords_button.pack(pady=5)
+        
+        self.apply_dark_theme_to_widget(self.apply_keywords_button)
+
+
+    def load_keywords_checkboxes(self, keywords):
+        """Carga los checkboxes con los keywords actuales."""
+        
+        for widget in self.keywords_checkbuttons_frame.winfo_children():
+            widget.destroy()
+        
+        self.keywords_vars = {keyword: tk.BooleanVar(value=True) for keyword in keywords}
+        
+        for idx, keyword in enumerate(keywords):
+            chk = tk.Checkbutton(self.keywords_checkbuttons_frame, text=keyword, var=self.keywords_vars[keyword], bg=DARK_COLOR, fg=TEXT_COLOR, selectcolor=EVEN_DARKER_COLOR)
+            chk.grid(row=idx // 3, column=idx % 3, sticky="w")
+
+
+    def add_custom_keyword(self):
+        """Add a new keyword and display it as a checkbox."""
+        
+        new_keyword = self.keyword_entry.get().strip()
+        
+        if new_keyword and new_keyword not in self.keywords_vars:
+            self.keywords_vars[new_keyword] = tk.BooleanVar(value=True)
+            chk = tk.Checkbutton(self.keywords_checkbuttons_frame, text=new_keyword, var=self.keywords_vars[new_keyword], bg=DARK_COLOR, fg=TEXT_COLOR, selectcolor=EVEN_DARKER_COLOR)
+            chk.grid(row=len(self.keywords_vars) // 3, column=len(self.keywords_vars) % 3, sticky="w")
+
 
 
     def _on_mousewheel(self, event):
@@ -170,16 +218,6 @@ class ImageClassifierApp:
             self.canvas.yview_scroll(1, "units")
         else:
             self.canvas.yview_scroll(-1*(event.delta//120), "units")
-
-    def apply_dark_theme(self):
-        """Apply dark theme to certain widgets."""
-        widgets_to_theme = [self.button_open, self.progress_label, self.canvas_frame]
-        for widget in widgets_to_theme:
-            self.apply_dark_theme_to_widget(widget)
-
-        # Other widgets:
-        self.canvas.configure(bg=DARK_COLOR, highlightbackground=DARK_COLOR)
-        self.scrollbar.configure(bg=LIGHT_DARK_COLOR, troughcolor=DARK_COLOR, activebackground=LIGHT_DARK_COLOR)
 
     def apply_dark_theme_to_widget(self, widget):
         """Apply dark theme to a specific widget."""
@@ -342,6 +380,7 @@ class ImageClassifierApp:
         for widget in self.canvas_frame.winfo_children():
             widget.destroy()
         self.canvas.configure(scrollregion=(0, 0, 0, 0))
+        self.all_thumbnails.clear()
 
     def open_image(self, path):
         """Open image with default viewer."""
@@ -462,8 +501,8 @@ class ImageClassifierApp:
         self.file_path_label.config(text=image_path)
 
         keywords = ImageUtils.get_iptc_keywords(image_path)
-        formatted_keywords = ", ".join([keyword.decode('utf-8') for keyword in keywords]) if keywords else "N/A"
-        self.keywords_label.config(text=f"Keywords: {formatted_keywords}", wraplength=380)
+        formatted_keywords = [keyword.decode('utf-8') for keyword in keywords] if keywords else []
+        self.load_keywords_checkboxes(formatted_keywords)
 
 
     def load_top_folders(self):
