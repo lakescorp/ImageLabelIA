@@ -10,26 +10,96 @@ class Translator:
 
         # Define a dictionary of translations from Spanish to English
         self.translations = {
-            "Procesar carpeta": "Process Folder",
-            "Aplicar a archivos raw": "Apply to raw files",
-            "Confiar en IA": "Trust AI",
-            "Detener": "Stop",
-            "¡Todas las imágenes han sido analizadas!": "All images have been analyzed!",
-            "Etiquetas aplicadas para ": "Tags applied for ",
-            "Aplicar todo": "Apply all"
-            # ... (agregar otras traducciones necesarias aquí)
+            "process_folder_btn": {
+                "es": "Procesar carpeta",
+                "en": "Process Folder"
+            },
+            "apply_raw_chk": {
+                "es": "Aplicar a archivos raw",
+                "en": "Apply to raw files"
+            },
+            "trust_ai_chk": {
+                "es": "Confiar en IA",
+                "en": "Trust AI"
+            },
+            "stop_btn": {
+                "es": "Detener",
+                "en": "Stop"
+            },
+            "all_images_analyzed": {
+                "es": "¡Todas las imágenes han sido analizadas!",
+                "en": "All images have been analyzed!"
+            },
+            "tags_applied_for": {
+                "es": "Etiquetas aplicadas para",
+                "en": "Tags applied for"
+            },
+            "apply_all": {
+                "es": "Aplicar todo",
+                "en": "Apply all"
+            }, 
+            "app_title": {
+                "es": "ImageLabelIA",
+                "en": "ImageLabelAI"
+            },
+            "process_folder_btn": {
+                "es": "Procesar carpeta",
+                "en": "Process Folder"
+            },
+            "apply_raw_chk": {
+                "es": "Aplicar a archivos raw",
+                "en": "Apply to raw files"
+            },
+            "trust_ai_chk": {
+                "es": "Confiar en IA",
+                "en": "Trust AI"
+            },
+            "stop_btn": {
+                "es": "Detener",
+                "en": "Stop"
+            },
+            "progress_label_default": {
+                "es": "0/0",
+                "en": "0/0"
+            },
+            "all_images_analyzed": {
+                "es": "¡Todas las imágenes han sido analizadas!",
+                "en": "All images have been analyzed!"
+            },
+            "keywords_title": {
+                "es": "Keywords",
+                "en": "Keywords"
+            },
+            "add_keyword_btn": {
+                "es": "Añadir",
+                "en": "Add"
+            },
+            "apply_tags_btn": {
+                "es": "Aplicar",
+                "en": "Apply"
+            },
+            "no_images_message":{
+                "es":"No hay imágenes en la carpeta seleccionada.",
+                "en":"There are no images in the selected folder."
+            },
+            "images_analyzed":{
+                "es":"¡Todas las imágenes han sido analizadas!",
+                "en":"All images have been analysed!"
+            }
         }
 
-    def translate(self, text):
+    def translate(self, code):
         """
-        Translate the text to English if the user's country is not Spanish-speaking.
+        Translate the text identified by the code based on the user's country.
 
         Args:
-        - text (str): The Spanish text to be translated.
+        - code (str): The code identifying the message.
 
         Returns:
-        - str: The translated text in English or the original text if the country is Spanish-speaking.
+        - str: The translated text in English or Spanish based on the user's country.
         """
-        if self.country_code not in self.hispanohablante_countries:
-            return self.translations.get(text, text)  # Devuelve la traducción si existe, de lo contrario devuelve el texto original
-        return text
+        lang = "en"
+        if self.country_code in self.hispanohablante_countries:
+            lang = "es"
+        
+        return self.translations.get(code, {}).get(lang, code)

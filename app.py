@@ -50,7 +50,7 @@ class ImageClassifierApp:
 
     def setup_root(self):
         """Configure the main window properties."""
-        self.root.title("ImageLabelIA")
+        self.root.title(self.translator.translate("app_title"))
         self.root.configure(bg=DARK_COLOR)
         self.root.grid_rowconfigure(1, weight=2)
         self.root.grid_columnconfigure(3, weight=0)
@@ -98,17 +98,17 @@ class ImageClassifierApp:
     def setup_widgets(self):
         """Set up the main interface widgets."""
         # Set up widgets like buttons, checkboxes, progress bars, etc.
-        self.button_open = tk.Button(self.root, text=self.translator.translate("Procesar carpeta"), command=self.process_folder)
+        self.button_open = tk.Button(self.root, text=self.translator.translate("process_folder_btn"), command=self.process_folder)
         self.apply_dark_theme_to_widget(self.button_open)
         self.button_open.grid(row=0, column=0, pady=10, sticky="w")
         
         self.apply_to_raw = tk.BooleanVar(value=False)
         self.trust_ai = tk.BooleanVar(value=False)
             
-        self.raw_option_chk = tk.Checkbutton(self.root, text=self.translator.translate("Aplicar a archivos raw"), variable=self.apply_to_raw, bg=DARK_COLOR, fg=TEXT_COLOR, selectcolor=EVEN_DARKER_COLOR)
+        self.raw_option_chk = tk.Checkbutton(self.root, text=self.translator.translate("apply_raw_chk"), variable=self.apply_to_raw, bg=DARK_COLOR, fg=TEXT_COLOR, selectcolor=EVEN_DARKER_COLOR)
         self.raw_option_chk.grid(row=0, column=1, pady=10, sticky="w")
             
-        self.trust_ai_chk = tk.Checkbutton(self.root, text=self.translator.translate("Confiar en IA"), variable=self.trust_ai, bg=DARK_COLOR, fg=TEXT_COLOR, selectcolor=EVEN_DARKER_COLOR)
+        self.trust_ai_chk = tk.Checkbutton(self.root, text=self.translator.translate("trust_ai_chk"), variable=self.trust_ai, bg=DARK_COLOR, fg=TEXT_COLOR, selectcolor=EVEN_DARKER_COLOR)
         self.trust_ai_chk.grid(row=0, column=2, pady=10, sticky="w")
 
         self.progress_var = tk.DoubleVar()
@@ -118,7 +118,7 @@ class ImageClassifierApp:
         self.apply_dark_theme_to_widget(self.progress_label)
 
 
-        self.button_stop = tk.Button(self.root, text=self.translator.translate("Detener"), command=self.stop_process)
+        self.button_stop = tk.Button(self.root, text=self.translator.translate("stop_btn"), command=self.stop_process)
         self.apply_dark_theme_to_widget(self.button_stop)
 
         self.setup_canvas()
@@ -165,13 +165,13 @@ class ImageClassifierApp:
     def setup_keywords_controls(self):
         """Configura los controles para añadir y seleccionar keywords en el frame de previsualización."""
 
-        self.keywords_title_label = tk.Label(self.preview_frame, text="Keywords", bg=DARK_COLOR, fg=TEXT_COLOR)
+        self.keywords_title_label = tk.Label(self.preview_frame, text=self.translator.translate("keywords_title"), bg=DARK_COLOR, fg=TEXT_COLOR)
         self.keywords_title_label.pack(pady=5, anchor="w")
         
         self.keyword_entry = tk.Entry(self.preview_frame, bg=DARK_COLOR, fg=TEXT_COLOR)
         self.keyword_entry.pack(pady=5)
         
-        self.add_keyword_button = tk.Button(self.preview_frame, text="Añadir", command=self.add_custom_keyword)
+        self.add_keyword_button = tk.Button(self.preview_frame, text=self.translator.translate("add_keyword_btn"), command=self.add_custom_keyword)
         self.add_keyword_button.pack(pady=5)
         
         self.apply_dark_theme_to_widget(self.add_keyword_button)
@@ -179,7 +179,15 @@ class ImageClassifierApp:
         self.keywords_checkbuttons_frame = tk.Frame(self.preview_frame, bg=DARK_COLOR)
         self.keywords_checkbuttons_frame.pack(pady=5)
         
-        self.apply_keywords_button = tk.Button(self.preview_frame, text="Aplicar", command=lambda: self.apply_tags(os.path.basename(self.file_path_label.cget("text")), self.file_path_label.cget("text"), self.keywords_vars))
+        self.apply_keywords_button = tk.Button(
+            self.preview_frame, 
+            text=self.translator.translate("apply_tags_btn"), 
+            command=lambda: (
+                self.apply_tags(os.path.basename(self.file_path_label.cget("text")), self.file_path_label.cget("text"), self.keywords_vars),
+                self.show_preview(self.file_path_label.cget("text"))
+            )
+        )
+
         self.apply_keywords_button.pack(pady=5)
         
         self.apply_dark_theme_to_widget(self.apply_keywords_button)
@@ -253,7 +261,7 @@ class ImageClassifierApp:
 
         # Check if there are any image files to process
         if not image_files:
-            self.show_toast(self.translator.translate("No hay imágenes en la carpeta seleccionada."))
+            self.show_toast(self.translator.translate("no_images_message"))
             return
         
         # Clear the canvas to prepare for the results
@@ -312,7 +320,7 @@ class ImageClassifierApp:
         self.progress_label.grid_forget()
         self.button_stop.grid_forget()
 
-        self.show_toast(self.translator.translate("¡Todas las imágenes han sido analizadas!"), bg_color=SUCCESS_COLOR)
+        self.show_toast(self.translator.translate("images_analyzed"), bg_color=SUCCESS_COLOR)
         
     def display_on_canvas(self, thumbnail, image_file, image_path, tags):
         """Display the thumbnail and associated tags on the canvas."""
@@ -343,7 +351,7 @@ class ImageClassifierApp:
 
         tags_frame.pack(anchor="w", pady=5, expand=True, fill="both")
 
-        apply_btn = tk.Button(right_frame, text=self.translator.translate("Aplicar todo"), command=lambda: self.apply_tags(image_file, image_path,tags_states))
+        apply_btn = tk.Button(right_frame, text=self.translator.translate("apply_all"), command=lambda: self.apply_tags(image_file, image_path,tags_states))
         self.apply_dark_theme_to_widget(apply_btn)
         apply_btn.pack(anchor="w", pady=5)
 
@@ -354,7 +362,7 @@ class ImageClassifierApp:
         apply_to_raw_files = self.apply_to_raw.get()
 
         self.image_writer.writeTagsFromPredictionsInImages([Prediction(image_path,enabled_tags)],apply_to_raw_files,True)
-        self.show_toast(f"{self.translator.translate('Etiquetas aplicadas para')} {image_name}!")
+        self.show_toast(f"{self.translator.translate('tags_applied_for')} {image_name}!")
 
     def show_toast(self, message, duration=2000, bg_color=None):
         """Show a passive popup message for a specified duration."""
