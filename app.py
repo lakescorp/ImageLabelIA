@@ -11,7 +11,7 @@ import queue
 from ImageClasifier import ImageClassifier
 from ImageDetector import ObjectDetector
 from ImageWriter import ImageWriter
-from translator import Translator
+from Translator import Translator
 from ImageUtils import ImageUtils
 
 # Define some UI color constants

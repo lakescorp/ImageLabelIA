@@ -2,7 +2,7 @@ from transformers import ViTImageProcessor, ViTForImageClassification
 import torch.nn.functional as F
 import torch
 
-from ImageLoader import ImageLoader
+from ImageUtils import ImageUtils
 
 class ImageClassifier:
     def __init__(self):
@@ -24,7 +24,7 @@ class ImageClassifier:
         - List of predicted classes for the image.
         """
 
-        image = ImageLoader.load_image(image_path)
+        image = ImageUtils.load_image(image_path)
 
         # Preprocess the image and convert to tensor format suitable for the model
         inputs = self.processor(images=[image], return_tensors="pt")

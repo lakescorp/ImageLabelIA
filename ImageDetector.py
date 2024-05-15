@@ -1,7 +1,7 @@
 # Required imports
 from transformers import DetrImageProcessor, DetrForObjectDetection
 import torch
-from ImageLoader import ImageLoader
+from ImageUtils import ImageUtils
 
 class ObjectDetector:
     def __init__(self):
@@ -24,7 +24,7 @@ class ObjectDetector:
         """
 
         # Open the image using PIL and correct its orientation if needed
-        image = ImageLoader.load_image(image_path)
+        image = ImageUtils.load_image(image_path)
 
         # Process the image and convert to tensors
         inputs = self.processor(images=image, return_tensors="pt").to(self.device)
