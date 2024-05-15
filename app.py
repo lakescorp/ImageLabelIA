@@ -8,11 +8,11 @@ from PIL import ImageTk
 import queue
 
 # Custom module imports
-from vit_image_classifier import ViTImageClassifier
-from detr_object_detector import DetrObjectDetector
+from ImageClasifier import ImageClassifier
+from ImageDetector import ObjectDetector
 from ImageWriter import ImageWriter
 from translator import Translator
-from image_utils import ImageUtils
+from ImageUtils import ImageUtils
 
 # Define some UI color constants
 DARK_COLOR = "#333"
@@ -40,8 +40,8 @@ class ImageClassifierApp:
         self.setup_treeview() 
         self.setup_preview_frame()
         # Initialize machine learning models and utility
-        self.vit_classifier = ViTImageClassifier()
-        self.detr_detector = DetrObjectDetector()
+        self.vit_classifier = ImageClassifier()
+        self.detr_detector = ObjectDetector()
         self.image_writer = ImageWriter()
         self.stop_requested = False  # Control variable for stopping a long process
         self.last_selected_folder = None

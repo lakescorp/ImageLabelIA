@@ -1,3 +1,4 @@
+import json
 import locale
 
 class Translator:
@@ -9,84 +10,8 @@ class Translator:
         self.country_code = locale.getdefaultlocale()[0].split('_')[1]
 
         # Define a dictionary of translations from Spanish to English
-        self.translations = {
-            "process_folder_btn": {
-                "es": "Procesar carpeta",
-                "en": "Process Folder"
-            },
-            "apply_raw_chk": {
-                "es": "Aplicar a archivos raw",
-                "en": "Apply to raw files"
-            },
-            "trust_ai_chk": {
-                "es": "Confiar en IA",
-                "en": "Trust AI"
-            },
-            "stop_btn": {
-                "es": "Detener",
-                "en": "Stop"
-            },
-            "all_images_analyzed": {
-                "es": "¡Todas las imágenes han sido analizadas!",
-                "en": "All images have been analyzed!"
-            },
-            "tags_applied_for": {
-                "es": "Etiquetas aplicadas para",
-                "en": "Tags applied for"
-            },
-            "apply_all": {
-                "es": "Aplicar todo",
-                "en": "Apply all"
-            }, 
-            "app_title": {
-                "es": "ImageLabelIA",
-                "en": "ImageLabelAI"
-            },
-            "process_folder_btn": {
-                "es": "Procesar carpeta",
-                "en": "Process Folder"
-            },
-            "apply_raw_chk": {
-                "es": "Aplicar a archivos raw",
-                "en": "Apply to raw files"
-            },
-            "trust_ai_chk": {
-                "es": "Confiar en IA",
-                "en": "Trust AI"
-            },
-            "stop_btn": {
-                "es": "Detener",
-                "en": "Stop"
-            },
-            "progress_label_default": {
-                "es": "0/0",
-                "en": "0/0"
-            },
-            "all_images_analyzed": {
-                "es": "¡Todas las imágenes han sido analizadas!",
-                "en": "All images have been analyzed!"
-            },
-            "keywords_title": {
-                "es": "Keywords",
-                "en": "Keywords"
-            },
-            "add_keyword_btn": {
-                "es": "Añadir",
-                "en": "Add"
-            },
-            "apply_tags_btn": {
-                "es": "Aplicar",
-                "en": "Apply"
-            },
-            "no_images_message":{
-                "es":"No hay imágenes en la carpeta seleccionada.",
-                "en":"There are no images in the selected folder."
-            },
-            "images_analyzed":{
-                "es":"¡Todas las imágenes han sido analizadas!",
-                "en":"All images have been analysed!"
-            }
-        }
+        with open('translations.json', 'r') as f:
+            self.translations = json.load(f)
 
     def translate(self, code):
         """
